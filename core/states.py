@@ -1,17 +1,20 @@
-class state
-
 '''
-this class represent the state
+class state
+atribute:
 
-must has number of black, white , which player in this state(bool), is_goal(bool)
+numbers of black
+numbers of white
+`Player` enum - WHITE, BLACK, EMPTY (File)
+`Action` class - represents a move (from_position, roll)
 
-function :
+functions :
+- `copy()` - creates deep copy of state
+- `get_piece_positions(player)` - returns list of positions for player's pieces
+- `is_terminal()` - checks if game is over (GOAL-TEST)
+- `get_winner()` - returns winning player if game over
+- `__eq__()` - check if two states are equal
+- `__hash__()` - make state hashable
+- `create_initial_state()` - creates starting board (s₀)
 
-*is_goal_state(state)-> true for white,false for black ,None for neither
-
-
-*copy_state(state)-> return new state after copying 
-
-*global function called "make_key" ->convert the state to hash (tuple)
 
 '''

@@ -1,13 +1,13 @@
-class action
-
 '''
-functions :
- *available_action(state,bool player (true for white,false for black ))-> call the lottery and return the available_action as list of
- old position index and new index for the current player
- like [10:12] 
 
+class action 
 
-* lottery ()-> ecpect number and its probability as [key:value]
+- `available_actions(state, roll)` - returns legal moves (list of [current index : new availble index]) depend on probapility class ,for current player (ACTIONS function)
+- `_is_valid_move(state, from_pos, roll)` - checks if move is legal
+- `_can_exit_board(state, from_pos, roll)` - checks if piece can exit
+- `_apply_special_square_effects(state, pos)` - applies special square rules
+- `get_legal_moves(state, roll)` - legacy function returning positions
+
 
 
 '''

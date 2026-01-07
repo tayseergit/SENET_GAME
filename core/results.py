@@ -1,9 +1,9 @@
-class result 
-
 '''
+Result class 
+  
 
-function:
-* update_board(state,action as on action ,bool player)-> new state after updating
+functions:
+   - `result(state, action)` - applies move, returns new state (RESULT function)
 
 
 
