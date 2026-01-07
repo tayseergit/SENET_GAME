@@ -14,6 +14,7 @@ SYMBOLS = {
     "GOAL": "G",         # Final square
 }
  
+ 
 COLORS = {
     SYMBOLS["WHITE"]: (245, 245, 245),     # White piece
     SYMBOLS["BLACK"]: (30, 30, 30),        # Black piece
