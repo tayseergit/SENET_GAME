@@ -6,9 +6,10 @@ enum class for black player and white player to handle what is the current playe
 
 from enum import Enum
 
-class Player(Enum):
-    BLACK = 1
-    WHITE = 2
+class Player(str, Enum):
+    WHITE = "W"
+    BLACK = "B"
+    EMPTY = "*"
 
     @property
     def opponent(self):

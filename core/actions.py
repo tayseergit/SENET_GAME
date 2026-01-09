@@ -13,7 +13,9 @@ class action
 
 class Action:
     def __init__(self):
-        
+        self.from_position = None
+        self.steps = None
+
         self.HOUSE_OF_REBIRTH = 15  # المربع الذي تعود إليه القطعة عند الغرق
         self.HOUSE_OF_HAPPINESS = 26 # المربع يجب المرور به
         self.HOUSE_OF_WATER = 27     # مربع الغرق
