@@ -15,9 +15,14 @@ class SenetState:
     current_player: Player = Player.WHITE
     last_action: Optional[Action] = None
 
-    # @property
-    # def white_number(self) -> int:
-    #     return sum(cell == Player.WHITE for cell in self.board)
+
+    @property
+    def add_pices_goal(self) -> int:
+        if self.current_player==Player.WHITE:
+            self.white_number+=1
+        else:
+            self.black_number+=1
+            
 
     # @property
     # def black_number(self) -> int:
@@ -74,16 +79,16 @@ class SenetState:
     
     def create_initial_state() -> SenetState:
         size =  30
-        board: list[Player] = [Player.EMPTY for _ in range(size)]
+        board: list[Player] = [Player.EMPTY.value for _ in range(size)]
 
         white_positions = [0, 2, 4, 6, 8, 10, 12]
         black_positions = [1, 3, 5, 7, 9, 11, 13]
 
         for idx in white_positions:
-            board[idx] = Player.WHITE
+            board[idx] = Player.WHITE.value
 
         for idx in black_positions:
-            board[idx] = Player.BLACK
+            board[idx] = Player.BLACK.value
 
         return SenetState(
             white_number= 0,

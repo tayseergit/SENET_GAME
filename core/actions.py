@@ -18,14 +18,7 @@ class Action:
     def __init__(self):
         self.from_position = None
         self.steps = None
-
-        self.HOUSE_OF_REBIRTH = HOUSE_OF_REBIRTH
-        self.HOUSE_OF_HAPPINESS = HOUSE_OF_HAPPINESS
-        self.HOUSE_OF_WATER = HOUSE_OF_WATER
-        self.HOUSE_OF_THREE_TRUTHS = HOUSE_OF_THREE_TRUTHS
-        self.HOUSE_OF_RE_ATOUM = HOUSE_OF_RE_ATOUM
-        self.HOUSE_OF_HORUS = HOUSE_OF_HORUS
-
+ 
     def available_actions(self, state, roll):
         # إرجاع قائمة بالتحركات المتاحة للاعب الحالي
         legal_moves = []
@@ -70,12 +63,12 @@ class Action:
         
         if pos == self.HOUSE_OF_WATER:
             # العودة إلى بيت الولادة إذا كان فارغاً، وإلا العودة لأقرب مربع فاضي
-            rebirth_index = HOUSE_OF_REBIRTH - 1 
+            rebirth_index = HOUSE_OF_REBIRTH 
             
             # التأكد ما إذا كان مربع الولادة محجوزاً
             if state.board[rebirth_index] is not None:
                 # البحث عن أقرب مربع فارغ قبل المربع 15 
-                for i in range(rebirth_index - 1, -1, -1):
+                for i in range(rebirth_index , -1, -1):
                     if state.board[i] is None:
                         return i
                 return 0 #ُإذا لم يكن هناك مربع فارغ، العودة إلى البداية
