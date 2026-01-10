@@ -9,18 +9,19 @@ from core.component.player import Player
 
 @dataclass
 class SenetState:
-    board: list[Player | None]
-    cols: int = 10
+    white_number:int =0
+    black_number:int=0
+    board: list[Player]
     current_player: Player = Player.WHITE
     last_action: Optional[Action] = None
 
-    @property
-    def white_number(self) -> int:
-        return sum(cell == Player.WHITE for cell in self.board)
+    # @property
+    # def white_number(self) -> int:
+    #     return sum(cell == Player.WHITE for cell in self.board)
 
-    @property
-    def black_number(self) -> int:
-        return sum(cell == Player.BLACK for cell in self.board)
+    # @property
+    # def black_number(self) -> int:
+    #     return sum(cell == Player.BLACK for cell in self.board)
 
     def copy(self) -> SenetState:
         return SenetState(
@@ -70,13 +71,23 @@ class SenetState:
     def __hash__(self) -> int:
         board_key = tuple(self.board)
         return hash((board_key, self.current_player.value, self.cols))
+    
+    def create_initial_state() -> SenetState:
+        size =  30
+        board: list[Player] = [Player.EMPTY for _ in range(size)]
 
+        white_positions = [0, 2, 4, 6, 8, 10, 12]
+        black_positions = [1, 3, 5, 7, 9, 11, 13]
 
-def create_initial_state(rows: int = 3, cols: int = 10) -> SenetState:
-    size = rows * cols
-    board: list[Player | None] = [None for _ in range(size)]
-    if rows >= 2 and cols >= 10:
-        for c in range(cols):
-            board[0 * cols + c] = Player.WHITE if c % 2 == 0 else Player.BLACK
-            board[1 * cols + c] = Player.BLACK if c % 2 == 0 else Player.WHITE
-    return SenetState(board=board, cols=cols, current_player=Player.WHITE)
+        for idx in white_positions:
+            board[idx] = Player.WHITE
+
+        for idx in black_positions:
+            board[idx] = Player.BLACK
+
+        return SenetState(
+            white_number= 0,
+            black_number=0,
+            board=board,
+            current_player=Player.WHITE
+        )

@@ -7,8 +7,8 @@ import pygame
 from core.actions import Action as RulesAction
 from core.controller.probability import Probability
 from core.results import Result
-from core.states import Action as MoveAction
 from core.states import SenetState, create_initial_state
+from core.component.player import Player
 
 
 @dataclass
@@ -24,11 +24,14 @@ class DisplayBoard:
     def __init__(self, state: SenetState | None = None, config: UiConfig | None = None) -> None:
         self.config = config or UiConfig()
         self.state = state or create_initial_state(rows=self.config.rows, cols=self.config.cols)
+        self.state.current_player = Player.BLACK
         self.rules = RulesAction()
         self.prob = Probability()
+        self.result = Result()
 
         self.current_roll: int | None = None
         self.legal_moves: dict[int, int] = {}
+        self.winner: Player | None = None
 
     def run(self) -> None:
         pygame.init()
@@ -50,10 +53,12 @@ class DisplayBoard:
                         if event.key == pygame.K_ESCAPE:
                             running = False
                         if event.key == pygame.K_SPACE:
-                            self._roll_and_compute_moves()
+                            if self.winner is None:
+                                self._roll_and_compute_moves()
 
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        self._handle_click(event.pos)
+                        if self.winner is None:
+                            self._handle_click(event.pos)
 
                 self._draw(screen, font)
                 pygame.display.flip()
@@ -81,13 +86,14 @@ class DisplayBoard:
 
         from_idx = idx
         to_idx = self.legal_moves[idx]
-        steps = to_idx - from_idx
-        if steps < 0:
-            steps += len(self.state.board)
-
-        self.state = Result.result(self.state, MoveAction(from_position=from_idx, steps=steps))
+        self.state = self.result.result(self.state, (from_idx, to_idx), int(self.current_roll))
         self.current_roll = None
         self.legal_moves = {}
+
+        if self.state.white_number == 0:
+            self.winner = Player.BLACK
+        elif self.state.black_number == 0:
+            self.winner = Player.WHITE
 
     def _mouse_to_index(self, mouse_pos: tuple[int, int]) -> int | None:
         mx, my = mouse_pos
@@ -108,12 +114,19 @@ class DisplayBoard:
     def _draw(self, screen: pygame.Surface, font: pygame.font.Font) -> None:
         screen.fill((15, 15, 18))
 
-        title = "Press SPACE to roll" if self.current_roll is None else f"Roll: {self.current_roll}"
+        if self.winner is not None:
+            title = f"Winner: {self.winner.value} (ESC to exit)"
+        else:
+            title = "Press SPACE to roll" if self.current_roll is None else f"Roll: {self.current_roll}"
         info = f"Turn: {self.state.current_player.value}"
         t_surf = font.render(title, True, (240, 240, 240))
         i_surf = font.render(info, True, (240, 240, 240))
         screen.blit(t_surf, (self.config.margin, self.config.margin))
         screen.blit(i_surf, (self.config.margin, self.config.margin + 32))
+
+        counts = f"W:{self.state.white_number}  B:{self.state.black_number}"
+        c_surf = font.render(counts, True, (200, 200, 200))
+        screen.blit(c_surf, (self.config.margin, self.config.margin + 64))
 
         for row in range(self.config.rows):
             for col in range(self.config.cols):
@@ -130,12 +143,16 @@ class DisplayBoard:
 
                 piece = self.state.board[idx]
                 if piece is not None:
-                    color = (240, 240, 240) if piece.value == "W" else (30, 30, 30)
+                    # Support both Player enum and plain string values
+                    val = piece.value if hasattr(piece, "value") else str(piece)
+                    is_white = val == "W"
+                    color = (240, 240, 240) if is_white else (30, 30, 30)
                     center = (x + self.config.cell_size // 2, y + self.config.cell_size // 2)
                     pygame.draw.circle(screen, color, center, self.config.cell_size // 3)
                     pygame.draw.circle(screen, (200, 180, 120), center, self.config.cell_size // 3, width=2)
 
-                    label = font.render(piece.value, True, (220, 60, 60) if piece.value == "B" else (60, 140, 255))
+                    label_color = (60, 140, 255) if is_white else (220, 60, 60)
+                    label = font.render(val, True, label_color)
                     label_rect = label.get_rect(center=center)
                     screen.blit(label, label_rect)
 

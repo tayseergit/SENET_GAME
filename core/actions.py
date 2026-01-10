@@ -11,18 +11,20 @@ class action
 
 '''
 
+from core.component.main_house import *
+
+
 class Action:
     def __init__(self):
         self.from_position = None
         self.steps = None
 
-        self.HOUSE_OF_REBIRTH = 15  # المربع الذي تعود إليه القطعة عند الغرق
-        self.HOUSE_OF_HAPPINESS = 26 # المربع يجب المرور به
-        self.HOUSE_OF_WATER = 27     # مربع الغرق
-        self.HOUSE_OF_THREE_TRUTHS = 28 #منزل الحقائق الثلاث
-        self.HOUSE_OF_TWO_TRUTHS = 29 # منزل الحقيقتين
-        self.BOARD_EXIT = 30 # المربع الذي تخرج منه القطعة من اللوحة
-
+        self.HOUSE_OF_REBIRTH = HOUSE_OF_REBIRTH
+        self.HOUSE_OF_HAPPINESS = HOUSE_OF_HAPPINESS
+        self.HOUSE_OF_WATER = HOUSE_OF_WATER
+        self.HOUSE_OF_THREE_TRUTHS = HOUSE_OF_THREE_TRUTHS
+        self.HOUSE_OF_RE_ATOUM = HOUSE_OF_RE_ATOUM
+        self.HOUSE_OF_HORUS = HOUSE_OF_HORUS
 
     def available_actions(self, state, roll):
         # إرجاع قائمة بالتحركات المتاحة للاعب الحالي
@@ -46,7 +48,7 @@ class Action:
         target_pos = from_pos + roll
 
         #  التحقق من خروج القطعة
-        if target_pos >= self.BOARD_EXIT:
+        if target_pos >= HOUSE_OF_HORUS:
             return self._can_exit_board(state, from_pos, roll)
 
         # اذا المربع المستهدف مشغول بقطعة لنفس اللاعب
@@ -60,7 +62,7 @@ class Action:
     def _can_exit_board(self, state, from_pos, roll):
         
         if from_pos >= 25:
-            return (from_pos + roll) == self.BOARD_EXIT
+            return (from_pos + roll) == HOUSE_OF_HORUS
         return False
     
     """تطبيق قاعدة الغرق في مربع الماء"""
@@ -68,7 +70,7 @@ class Action:
         
         if pos == self.HOUSE_OF_WATER:
             # العودة إلى بيت الولادة إذا كان فارغاً، وإلا العودة لأقرب مربع فاضي
-            rebirth_index = self.HOUSE_OF_REBIRTH - 1 
+            rebirth_index = HOUSE_OF_REBIRTH - 1 
             
             # التأكد ما إذا كان مربع الولادة محجوزاً
             if state.board[rebirth_index] is not None:

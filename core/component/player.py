@@ -9,7 +9,7 @@ from enum import Enum
 class Player(str, Enum):
     WHITE = "W"
     BLACK = "B"
-    EMPTY = "*"
+    EMPTY = "."
 
     @property
     def opponent(self):
