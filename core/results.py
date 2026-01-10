@@ -64,7 +64,7 @@ class Result:
         # -----------------------------
         if start_idx == HOUSE_OF_HORUS and end_idx >= 30:
             board[start_idx] = Player.EMPTY.value
-            new_state.add_pices_goal
+            new_state.add_piece_to_goal(new_state.current_player)
    
  
         #  نفذ النقل العادي او التبديل
