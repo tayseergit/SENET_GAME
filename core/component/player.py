@@ -1,9 +1,3 @@
-'''
-enum class for black player and white player to handle what is the current player is 
-
-'''
-
-
 from enum import Enum
 
 class Player(str, Enum):
@@ -11,7 +5,5 @@ class Player(str, Enum):
     BLACK = "B"
     EMPTY = "."
 
-    @property
     def opponent(self):
-        # تبديل الدور للاعب الخصم
         return Player.WHITE if self == Player.BLACK else Player.BLACK
