@@ -1,16 +1,3 @@
-'''
-
-class action 
-
-- `available_actions(state, roll)` - returns legal moves (list of [current index : new availble index]) depend on probapility class ,for current player (ACTIONS function)
-- `_is_valid_move(state, from_pos, roll)` - checks if move is legal
-- `_can_exit_board(state, from_pos, roll)` - checks if piece can exit
-- `_apply_special_square_effects(state, pos)` - applies special square rules
-- `get_legal_moves(state, roll)` - legacy function returning positions
-
-
-'''
-
 from core.component.main_house import *
 from core.component.player import Player
 
@@ -25,13 +12,12 @@ class Action:
     def available_actions(self, state, roll):
         legal_moves = []
         current_player_symbol = state.current_player.value
+        board = state.board
         
-        for pos, piece in enumerate(state.board):
-            if piece == current_player_symbol:
+        for pos in range(len(board)):
+            if board[pos] == current_player_symbol:
                 if self._is_valid_move(state, pos, roll):
                     target_pos = pos + roll
-                    
-                    # إذا كانت الحركة تؤدي للخروج
                     if target_pos > HOUSE_OF_HORUS:
                         final_pos = 30 
                     else:
@@ -45,38 +31,30 @@ class Action:
         current_player_symbol = state.current_player.value
         target_pos = from_pos + roll
 
-        #  شرط المرور الإجباري على بيت السعادة 
-        if from_pos < HOUSE_OF_HAPPINESS and target_pos > HOUSE_OF_HAPPINESS:
+        if from_pos < HOUSE_OF_HAPPINESS < target_pos:
             return False
 
-        # . التحقق من خروج القطعة 
         if target_pos > HOUSE_OF_HORUS:
-            return self._can_exit_board(state, from_pos, roll)
+            return self._can_exit_board(state, from_pos)
 
-        # 3. التحقق من المربعات المشغولة بقطع الصديق
         if target_pos <= HOUSE_OF_HORUS:
             if state.board[target_pos] == current_player_symbol:
                 return False
 
         return True
     
-    def _can_exit_board(self, state, from_pos, roll):
-        # قاعدة الخروج 
-        # ولا يسمح بالخروج إلا للقطع التي اجتازت أو تقف في بيت السعادة 
+    def _can_exit_board(self, from_pos, roll):
         if from_pos >= HOUSE_OF_HAPPINESS:
             return (from_pos + roll) == 30
         return False
     
     def _apply_special_square_effects(self, state, pos):
-        # إذا كان المربع هو بيت الماء 
         if pos == HOUSE_OF_WATER:
             rebirth_idx = HOUSE_OF_REBIRTH 
             
-            # إذا كان بيت الولادة (14) فارغاً،  
             if self._is_empty(state.board[rebirth_idx]):
                  return rebirth_idx
             
-            # وإلا نبحث عن أول مربع فارغ للخلف من المربع 14
             for i in range(rebirth_idx - 1, -1, -1):
                 if self._is_empty(state.board[i]):
                     return i
