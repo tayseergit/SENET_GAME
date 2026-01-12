@@ -17,6 +17,7 @@ class Expectiminimax:
         self.max_depth = max_depth
         self.verbose = verbose
         self.nodes_explored = 0
+        self.pruned_nodes = 0
         
         self.transposition_table = {}
         self.tt_hits = 0
@@ -25,6 +26,7 @@ class Expectiminimax:
     def choose_move(self, state: SenetState, roll: int) -> Tuple[Optional[tuple], float]:
 
         self.nodes_explored = 0
+        self.pruned_nodes = 0
         self.tt_hits = 0
         self.transposition_table.clear()
 
@@ -42,13 +44,15 @@ class Expectiminimax:
         
         best_action = None
         best_value = float('-inf')
+        alpha = float('-inf')
+        beta = float('inf')
 
         for i, move in enumerate(legal_moves, 1):
             from_idx, to_idx = list(move.items())[0]
             action = (from_idx, to_idx)
             
             new_state = self.result.result(state, action)
-            value = self._expectiminimax(new_state, self.max_depth - 1, False)
+            value = self._expectiminimax(new_state, self.max_depth - 1, False, alpha, beta)
             
             if self.verbose:
                 status = "New best evaluation value" if value > best_value else ""
@@ -57,6 +61,7 @@ class Expectiminimax:
             if value > best_value:
                 best_value = value
                 best_action = action
+                alpha = max(alpha, value)
 
         end_time = time.time()
         elapsed_time = end_time - start_time
@@ -69,29 +74,29 @@ class Expectiminimax:
         
         return best_action, best_value
 
-    def _expectiminimax(self, state: SenetState, depth: int, is_max_player: bool) -> float:
+    def _expectiminimax(self, state: SenetState, depth: int, is_max_player: bool, 
+                       alpha: float, beta: float) -> float:
         self.nodes_explored += 1
         
         if state.is_terminal():
-            eval_value = Heuristic.evaluate(state)
-            return eval_value
+            return Heuristic.evaluate(state)
         
         if depth == 0:
-            eval_value = Heuristic.evaluate(state)
-            return eval_value
+            return Heuristic.evaluate(state)
         
         state_key = (tuple(state.board), state.current_player, depth, is_max_player)
         if state_key in self.transposition_table:
             self.tt_hits += 1
             return self.transposition_table[state_key]
         
-        value = self._chance_node(state, depth, is_max_player)
+        value = self._chance_node(state, depth, is_max_player, alpha, beta)
         
         self.transposition_table[state_key] = value
         
         return value
 
-    def _chance_node(self, state: SenetState, depth: int, is_max_player: bool) -> float:
+    def _chance_node(self, state: SenetState, depth: int, is_max_player: bool,
+                    alpha: float, beta: float) -> float:
         expected_value = 0.0
         
         for roll in [1, 2, 3, 4, 5]:
@@ -101,29 +106,53 @@ class Expectiminimax:
             if not legal_moves:
                 new_state = state.copy()
                 new_state.current_player = new_state.current_player.opponent()
-                value = self._expectiminimax(new_state, depth - 1, not is_max_player)
+                value = self._expectiminimax(new_state, depth - 1, not is_max_player, alpha, beta)
                 expected_value += probability * value
             else:
                 if is_max_player:
-                    max_value = float('-inf')
-                    for move in legal_moves:
-                        from_idx, to_idx = list(move.items())[0]
-                        new_state = self.result.result(state, (from_idx, to_idx))
-                        value = self._expectiminimax(new_state, depth - 1, False)
-                        if value > max_value:
-                            max_value = value
+                    max_value = self._max_node(state, legal_moves, depth, alpha, beta)
                     expected_value += probability * max_value
                 else:
-                    min_value = float('inf')
-                    for move in legal_moves:
-                        from_idx, to_idx = list(move.items())[0]
-                        new_state = self.result.result(state, (from_idx, to_idx))
-                        value = self._expectiminimax(new_state, depth - 1, True)
-                        if value < min_value:
-                            min_value = value
+                    min_value = self._min_node(state, legal_moves, depth, alpha, beta)
                     expected_value += probability * min_value
         
         return expected_value
+
+    def _max_node(self, state: SenetState, legal_moves: list, depth: int,
+                  alpha: float, beta: float) -> float:
+        max_value = float('-inf')
+        
+        for move in legal_moves:
+            from_idx, to_idx = list(move.items())[0]
+            new_state = self.result.result(state, (from_idx, to_idx))
+            
+            value = self._expectiminimax(new_state, depth - 1, False, alpha, beta)
+            max_value = max(max_value, value)
+            
+            alpha = max(alpha, value)
+            if beta <= alpha:
+                self.pruned_nodes += 1
+                break
+        
+        return max_value
+
+    def _min_node(self, state: SenetState, legal_moves: list, depth: int,
+                  alpha: float, beta: float) -> float:
+        min_value = float('inf')
+        
+        for move in legal_moves:
+            from_idx, to_idx = list(move.items())[0]
+            new_state = self.result.result(state, (from_idx, to_idx))
+            
+            value = self._expectiminimax(new_state, depth - 1, True, alpha, beta)
+            min_value = min(min_value, value)
+            
+            beta = min(beta, value)
+            if beta <= alpha:
+                self.pruned_nodes += 1
+                break
+        
+        return min_value
 
     def execute_turn(self, state: SenetState, roll: int) -> SenetState:
         best_action, value = self.choose_move(state, roll)

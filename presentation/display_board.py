@@ -57,6 +57,10 @@ class DisplayBoard:
         self.winner: Player | None = None
         self._needs_redraw = True
         self.ai_thinking = False
+        self.depth = 6
+        
+        self.last_move_from: int | None = None
+        self.last_move_to: int | None = None
         
         self.screen = None
         self.font = None
@@ -80,6 +84,9 @@ class DisplayBoard:
         for move in self.rules.available_actions(self.state, self.current_roll):
             for from_idx, to_idx in move.items():
                 self.legal_moves[int(from_idx)] = int(to_idx)
+        
+        self.last_move_from = None
+        self.last_move_to = None
 
     def _mouse_to_index(self, mouse_pos: tuple[int, int]) -> int | None:
         mx, my = mouse_pos
@@ -105,7 +112,7 @@ class DisplayBoard:
 
         if self._btn_mode and self._btn_mode.collidepoint(mouse_pos):
             if self.game_mode == "human_vs_human":
-                self.game_mode = "human_vs_ai"
+                self.game_mode = "human_vs_expectiminimax"
             else:
                 self.game_mode = "human_vs_human"
             return
@@ -117,7 +124,7 @@ class DisplayBoard:
             return
 
         if self._btn_depth_plus and self._btn_depth_plus.collidepoint(mouse_pos):
-            if self.ai_depth < 5:
+            if self.ai_depth < self.depth:
                 self.ai_depth += 1
                 self.controller.max_depth = self.ai_depth
             return
@@ -129,6 +136,11 @@ class DisplayBoard:
 
         if self._btn_ai and self._btn_ai.collidepoint(mouse_pos):
             if self.current_roll is not None:
+                best_action, _ = self.controller.choose_move(self.state, self.current_roll)
+                if best_action:
+                    self.last_move_from = best_action[0]
+                    self.last_move_to = best_action[1]
+                
                 self.state = self.controller.execute_turn(self.state, self.current_roll)
                 self.current_roll = None
                 self.legal_moves = {}
@@ -153,6 +165,10 @@ class DisplayBoard:
 
         from_idx = idx
         to_idx = self.legal_moves[idx]
+        
+        self.last_move_from = from_idx
+        self.last_move_to = to_idx
+        
         self.state = self.result.result(self.state, (from_idx, to_idx))
         self.current_roll = None
         self.legal_moves = {}
@@ -161,19 +177,23 @@ class DisplayBoard:
             self.winner = self.state.get_winner()
             return
         
-        if self.game_mode == "human_vs_ai" and self.state.current_player == self.ai_player:
+        if self.game_mode == "human_vs_expectiminimax" and self.state.current_player == self.ai_player:
             pygame.time.wait(300)
             
             self.ai_roll = self.prob.throw_sticks()
             if self.screen and self.font and self.big_font:
                 self._draw(self.screen, self.font)
                 pygame.display.flip()
-            pygame.time.wait(1200)
             
             self.ai_thinking = True
             if self.screen and self.font and self.big_font:
                 self._draw(self.screen, self.font)
                 pygame.display.flip()
+            
+            best_action, _ = self.controller.choose_move(self.state, self.ai_roll)
+            if best_action:
+                self.last_move_from = best_action[0]
+                self.last_move_to = best_action[1]
             
             self.state = self.controller.execute_turn(self.state, self.ai_roll)
             
@@ -230,7 +250,7 @@ class DisplayBoard:
             for j in range(3):
                 x = rect.x + 26 + j * 18
                 pygame.draw.line(screen, color, (x, rect.y + 18), (x, rect.y + rect.height - 18), 2)
-                pygame.draw.circle(screen, color, (x, rect.y + rect.height - 18), 5, width=1)
+                pygame.draw.circle(screen, color, (x, rect.y + rect.height - 18), self.depth, width=1)
 
         elif sq_num == HOUSE_OF_RE_ATOUM:
             pygame.draw.circle(screen, color, (cx - 14, cy - 6), 8, width=1)
@@ -266,16 +286,16 @@ class DisplayBoard:
         b_label = label_font.render(f"Black: {self.state.black_goal_count}", True, (20, 20, 20))
         screen.blit(b_label, (black_box.x + 12, black_box.y + 15))
 
-        mode_text = "Human vs AI" if self.game_mode == "human_vs_ai" else "Human vs Human"
+        mode_text = "Human vs AI" if self.game_mode == "human_vs_expectiminimax" else "Human vs Human"
         self._btn_mode = pygame.Rect(m + 30, m + 80, 140, 35)
         
-        mode_color = (100, 150, 220) if self.game_mode == "human_vs_ai" else (150, 150, 150)
+        mode_color = (150, 150, 150)
         pygame.draw.rect(screen, mode_color, self._btn_mode, border_radius=8)
         pygame.draw.rect(screen, (60, 60, 60), self._btn_mode, width=1, border_radius=8)
         mode_label = pygame.font.SysFont("arial", 16, bold=True).render(mode_text, True, (255, 255, 255))
         screen.blit(mode_label, mode_label.get_rect(center=self._btn_mode.center))
 
-        if self.game_mode == "human_vs_ai":
+        if self.game_mode == "human_vs_expectiminimax":
             depth_y = m + 125
             depth_x = m + 30
             
@@ -328,7 +348,7 @@ class DisplayBoard:
         
         if self.ai_thinking:
             turn_text = pygame.font.SysFont("arial", 20, bold=True).render("Thinking...", True, turn_text_color)
-        elif self.game_mode == "human_vs_ai" and self.state.current_player == self.ai_player:
+        elif self.game_mode == "human_vs_expectiminimax" and self.state.current_player == self.ai_player:
             turn_text = label_font.render(f"{self.state.current_player.name}'s Turn (AI)", True, turn_text_color)
         else:
             turn_text = label_font.render(f"{self.state.current_player.name}'s Turn", True, turn_text_color)
@@ -376,6 +396,12 @@ class DisplayBoard:
 
                 if idx in self.legal_moves:
                     pygame.draw.rect(screen, (40, 160, 90), rect, width=4, border_radius=12)
+                
+                if self.last_move_from is not None and idx == self.last_move_from:
+                    pygame.draw.rect(screen, (60, 200, 110), rect, width=5, border_radius=12)
+                
+                if self.last_move_to is not None and idx == self.last_move_to:
+                    pygame.draw.rect(screen, (60, 200, 110), rect, width=5, border_radius=12)
 
                 sq_num = idx 
                 if sq_num in {
@@ -410,10 +436,7 @@ class DisplayBoard:
         else:
             hint_y = board_y + board_h + 40
             if self.current_roll is None:
-                if self.game_mode == "human_vs_ai" and self.state.current_player == self.ai_player:
-                    hint = small.render("Press 'Throw Sticks' or SPACE to roll for AI", True, (80, 80, 180))
-                else:
-                    hint = small.render("Press 'Throw Sticks' or SPACE to roll the sticks", True, (80, 80, 80))
+                hint = small.render("Press 'Throw Sticks' or SPACE to roll the sticks", True, (80, 80, 80))
             else:
                 hint = small.render(f"Roll: {self.current_roll} - Click a green highlighted piece to move", True, (30, 120, 60))
             hint_rect = hint.get_rect(center=(board_center_x, hint_y))
@@ -443,15 +466,23 @@ class DisplayBoard:
                             running = False
                         if event.key == pygame.K_SPACE:
                             if self.winner is None and self.current_roll is None and not self.ai_thinking:
-                                if self.game_mode == "human_vs_ai" and self.state.current_player == self.ai_player:
+                                if self.game_mode == "human_vs_expectiminimax" and self.state.current_player == self.ai_player:
                                     self.ai_roll = self.prob.throw_sticks()
+                                    
+                                    self.last_move_from = None
+                                    self.last_move_to = None
+                                    
                                     self._draw(self.screen, self.font)
                                     pygame.display.flip()
-                                    pygame.time.wait(1200)
                                     
                                     self.ai_thinking = True
                                     self._draw(self.screen, self.font)
                                     pygame.display.flip()
+                                    
+                                    best_action, _ = self.controller.choose_move(self.state, self.ai_roll)
+                                    if best_action:
+                                        self.last_move_from = best_action[0]
+                                        self.last_move_to = best_action[1]
                                     
                                     self.state = self.controller.execute_turn(self.state, self.ai_roll)
                                     
