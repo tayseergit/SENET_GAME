@@ -19,13 +19,11 @@ class SenetState:
     white_goal_count: int = 0
     black_goal_count: int = 0
 
-    @property
     def white_number(self) -> int:
-        return sum(cell == Player.WHITE.value for cell in self.board)
+        return sum(1 for cell in self.board if cell == Player.WHITE.value)
 
-    @property
     def black_number(self) -> int:
-        return sum(cell == Player.BLACK.value for cell in self.board)
+        return sum(1 for cell in self.board if cell == Player.BLACK.value)
 
     def copy(self) -> SenetState:
         return SenetState(
@@ -36,19 +34,6 @@ class SenetState:
             black_goal_count=self.black_goal_count,
         )
 
-    def pos_to_index(self, pos: tuple[int, int]) -> int:
-        r, c = pos
-        return r * BOARD_COLS + c
-
-    def index_to_pos(self, idx: int) -> tuple[int, int]:
-        return divmod(idx, BOARD_COLS)
-
-    def get_cell(self, pos: tuple[int, int]) -> str:
-        return self.board[self.pos_to_index(pos)]
-
-    def set_cell(self, pos: tuple[int, int], value: str) -> None:
-        self.board[self.pos_to_index(pos)] = value
-
     def add_piece_to_goal(self, player: Player) -> None:
         if player == Player.WHITE:
             self.white_goal_count += 1
@@ -56,14 +41,25 @@ class SenetState:
             self.black_goal_count += 1
 
     def is_terminal(self) -> bool:
-        return self.white_number == 0 or self.black_number == 0
+        white_found = False
+        black_found = False
+        for cell in self.board:
+            if cell == Player.WHITE.value:
+                white_found = True
+                if black_found:
+                    return False
+            elif cell == Player.BLACK.value:
+                black_found = True
+                if white_found:
+                    return False
+        return True
 
     def get_winner(self) -> Optional[Player]:
         if not self.is_terminal():
             return None
-        if self.white_number == 0 and self.black_number > 0:
+        if self.white_number() == 0 and self.black_number() > 0:
             return Player.BLACK
-        if self.black_number == 0 and self.white_number > 0:
+        if self.black_number() == 0 and self.white_number() > 0:
             return Player.WHITE
         return None
 
