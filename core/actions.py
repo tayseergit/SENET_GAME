@@ -35,7 +35,7 @@ class Action:
             return False
 
         if target_pos > HOUSE_OF_HORUS:
-            return self._can_exit_board(state, from_pos)
+            return self._can_exit_board(from_pos, roll)
 
         if target_pos <= HOUSE_OF_HORUS:
             if state.board[target_pos] == current_player_symbol:
