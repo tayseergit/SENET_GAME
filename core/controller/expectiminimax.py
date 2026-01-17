@@ -154,7 +154,7 @@ class Expectiminimax:
         
         return min_value
 
-    def execute_turn(self, state: SenetState, roll: int) -> SenetState:
+    def execute_turn(self, state: SenetState, roll: int) -> tuple[SenetState, Optional[tuple]]:
         best_action, value = self.choose_move(state, roll)
         
         if best_action is None:
@@ -162,14 +162,14 @@ class Expectiminimax:
             new_state.current_player = new_state.current_player.opponent()
             if self.ui_callback:
                 self.ui_callback()
-            return new_state
+            return new_state, None
         
         new_state = self.result.result(state, best_action)
         
         if self.ui_callback:
             self.ui_callback()
         
-        return new_state
+        return new_state, best_action
 
     def set_ui_callback(self, callback: Callable[[], None]) -> None:
         self.ui_callback = callback

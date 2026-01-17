@@ -4,18 +4,18 @@ from core.component.player import Player
 class Heuristic:
     
     def evaluate(state: SenetState) -> float:
-        white_count = state.white_goal_count
-        black_count = state.black_goal_count
-        
+        white_count = state.white_number()
+        black_count = state.black_number()
+
         if white_count == 0:
-            return -10000
-        if black_count == 0:
             return 10000
+        if black_count == 0:
+            return -10000
         
         score = (state.white_goal_count - state.black_goal_count) * 1000
-        
-        score += (white_count - black_count) * 50
-        
+
+        score += (black_count - white_count) * 50
+
         white_positions = []
         black_positions = []
         

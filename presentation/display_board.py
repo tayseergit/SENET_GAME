@@ -136,12 +136,11 @@ class DisplayBoard:
 
         if self._btn_ai and self._btn_ai.collidepoint(mouse_pos):
             if self.current_roll is not None:
-                best_action, _ = self.controller.choose_move(self.state, self.current_roll)
+                self.state, best_action = self.controller.execute_turn(self.state, self.current_roll)
                 if best_action:
                     self.last_move_from = best_action[0]
                     self.last_move_to = best_action[1]
                 
-                self.state = self.controller.execute_turn(self.state, self.current_roll)
                 self.current_roll = None
                 self.legal_moves = {}
                 if self.state.is_terminal():
@@ -190,12 +189,10 @@ class DisplayBoard:
                 self._draw(self.screen, self.font)
                 pygame.display.flip()
             
-            best_action, _ = self.controller.choose_move(self.state, self.ai_roll)
+            self.state, best_action = self.controller.execute_turn(self.state, self.ai_roll)
             if best_action:
                 self.last_move_from = best_action[0]
                 self.last_move_to = best_action[1]
-            
-            self.state = self.controller.execute_turn(self.state, self.ai_roll)
             
             self.ai_roll = None
             self.ai_thinking = False
@@ -479,12 +476,10 @@ class DisplayBoard:
                                     self._draw(self.screen, self.font)
                                     pygame.display.flip()
                                     
-                                    best_action, _ = self.controller.choose_move(self.state, self.ai_roll)
+                                    self.state, best_action = self.controller.execute_turn(self.state, self.ai_roll)
                                     if best_action:
                                         self.last_move_from = best_action[0]
                                         self.last_move_to = best_action[1]
-                                    
-                                    self.state = self.controller.execute_turn(self.state, self.ai_roll)
                                     
                                     self.ai_roll = None
                                     self.ai_thinking = False
